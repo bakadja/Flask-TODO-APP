@@ -55,9 +55,6 @@
                     padding: 20px;
                 }
 
-            #closeButton {
-                margin-top: 10px;
-            }
             #todoitem{
                     border-radius: 5px;
                     border: 1px solid #000;
@@ -71,6 +68,31 @@
                     background-color: green;
                     color: white;
             }
+            .inline-form {
+                    display: inline;
+            }
+            .icon-button {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    padding: 6px;
+            }
+            .flash-messages {
+                    margin: 10px 0;
+            }
+            .flash-message {
+                    padding: 8px;
+                    border-radius: 4px;
+                    margin-bottom: 6px;
+            }
+            .flash-message.error {
+                    background-color: #ffdddd;
+                    border: 1px solid #ff5c5c;
+            }
+            .flash-message.success {
+                    background-color: #ddffdd;
+                    border: 1px solid #5cff5c;
+            }
         </style>
     </head>
     <body>
@@ -83,10 +105,19 @@
                 <header class="w3-container w3-light-grey">
                     <h3>To Do List</h3>
                 </header>
-                <form action="/add" method="POST">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                <form action="{{ url_for('add_todo') }}" method="post">
                 <div class="w3-container">
                     <label for="title">Add Your Task Here</label>
-                    <input class="w3-input w3-border" type="text" name="title" placeholder="Enter Todo..">
+                    <input class="w3-input w3-border" type="text" name="title" placeholder="Enter Todo.." required>
                     <button class="w3-button w3-circle w3-black" type="submit">+</button>
                 </div>
                 </form>
@@ -105,29 +136,48 @@
                 {% for todo in todo_list %}
                     {% if todo['complete'] == False %}
                         <div id = "todoitem">
-                        <p id = "{{todo['id']}}">{{todo['title']}}</p>
-                        <button><a href="/complete/{{todo['id']}}"> <i class="fa fa-check"></i></a></button>
-                        <button onclick="openPopup({{todo['id']}})"><i class="fa fa-pencil"></i></button>
-                        <button><a href="/delete/{{todo['id']}}"><i class="fa fa-trash-o"></i></a></button>
+                        <p id = "todo-title-{{todo['id']}}">{{todo['title']}}</p>
+                        <form class="inline-form" method="post" action="{{ url_for('complete_todo', todo_id=todo['id']) }}">
+                            <button type="submit" class="icon-button" title="Mark complete">
+                                <i class="fa fa-check"></i>
+                            </button>
+                        </form>
+                        <button class="icon-button" type="button" onclick="openPopup({{todo['id']}})" title="Edit">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <form class="inline-form" method="post" action="{{ url_for('delete_todo', todo_id=todo['id']) }}">
+                            <button type="submit" class="icon-button" title="Delete">
+                                <i class="fa fa-trash-o"></i>
+                            </button>
+                        </form>
                         </div>
                     {% else %}
                         <div id = "todoitem_comp">
                         <p><del>{{todo['title']}}</del></p>
-                        <button onclick="openPopup({{todo['id']}})"><i class="fa fa-pencil"></i></button>
-                        <button><a href="/delete/{{todo['id']}}"><i class="fa fa-trash-o"></i></a></button>
+                        <button class="icon-button" type="button" onclick="openPopup({{todo['id']}})" title="Edit">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <form class="inline-form" method="post" action="{{ url_for('delete_todo', todo_id=todo['id']) }}">
+                            <button type="submit" class="icon-button" title="Delete">
+                                <i class="fa fa-trash-o"></i>
+                            </button>
+                        </form>
                     </div>
                     {% endif %}
-                    
+
                 {% endfor%}
-            
+
         </div>
     </div>
     <div id="popupContainer">
   <div id="popupContent">
-    <form action="/update" method="POST">
-        <input type="hidden" id="hiddenField" name="hiddenField">
-        <input type="text" id="inputField" placeholder="Enter text" name="inputField">
-        <button id="closeButton" type="submit">Update</button>
+    <form action="{{ url_for('update_todo') }}" method="post">
+        <input type="hidden" id="hiddenField" name="todo_id">
+        <input type="text" id="inputField" placeholder="Enter text" name="title" required>
+        <div class="w3-margin-top">
+            <button class="w3-button w3-blue" type="submit">Update</button>
+            <button class="w3-button w3-light-grey" type="button" onclick="closePopup()">Cancel</button>
+        </div>
     </form>
   </div>
 </div>
@@ -142,15 +192,28 @@
             // Update the date and time every second
             setInterval(updateDateTime, 1000); 
 
-            //pop input filed to modify the text
+            // Populate the popup form to modify the text
             function openPopup(displayTextId) {
-                var displayText = document.getElementById(displayTextId).textContent;
+                var displayText = document.getElementById("todo-title-" + displayTextId).textContent;
                 var inputField = document.getElementById("inputField");
                 var hiddenField = document.getElementById("hiddenField");
                 inputField.value = displayText;
                 hiddenField.value = displayTextId;
                 document.getElementById("popupContainer").style.display = "block";
+                inputField.focus();
             }
+
+            document.getElementById("popupContainer").addEventListener("click", function(event) {
+                if (event.target === this) {
+                    closePopup();
+                }
+            });
+
+            document.addEventListener("keydown", function(event) {
+                if (event.key === "Escape") {
+                    closePopup();
+                }
+            });
 
             function closePopup() {
                     document.getElementById("popupContainer").style.display = "none";
