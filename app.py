@@ -1,10 +1,25 @@
-from flask import Flask, render_template , request , redirect ,url_for
+from flask import Flask, render_template, request, redirect, url_for
 from tinydb import TinyDB, Query
-import random
+
 
 app = Flask(__name__)
-#createing typedb
+# creating the TinyDB database
 db = TinyDB('db.json')
+
+
+def get_next_id() -> int:
+    """Return an integer identifier that is unique within the todo table."""
+    todos = db.all()
+    if not todos:
+        return 1
+
+    # TinyDB stores rows as dictionaries, so we defensively ignore rows missing the
+    # "id" key or values that are not integers.
+    used_ids = [todo.get("id") for todo in todos if isinstance(todo.get("id"), int)]
+    if not used_ids:
+        return 1
+
+    return max(used_ids) + 1
 
 
 @app.route("/")
@@ -16,7 +31,7 @@ def root():
 def add():
     #add new item
     title = request.form.get("title")
-    db.insert({'id':random.randint(0, 1000),'title': title, 'complete': False})
+    db.insert({'id': get_next_id(), 'title': title, 'complete': False})
     return redirect(url_for("root"))
 
 @app.route("/update",methods=["POST"])
