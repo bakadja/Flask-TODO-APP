@@ -153,7 +153,7 @@
                         </div>
                     {% else %}
                         <div id = "todoitem_comp">
-                        <p><del>{{todo['title']}}</del></p>
+                        <p id = "todo-title-{{todo['id']}}"><del>{{todo['title']}}</del></p>
                         <button class="icon-button" type="button" onclick="openPopup({{todo['id']}})" title="Edit">
                             <i class="fa fa-pencil"></i>
                         </button>
